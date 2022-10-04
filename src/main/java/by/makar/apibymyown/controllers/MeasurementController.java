@@ -42,14 +42,22 @@ public class MeasurementController {
     public MeasurementResponse findAll(){
         return new MeasurementResponse(measurementService.findAll().stream().map(this::convertToMeasurementDTO).toList());
     }
+    @GetMapping("/array")
+    public List<MeasurementDTO> findAllArray(){
+        return measurementService.findAll().stream().map(this::convertToMeasurementDTO).toList();
+    }
 
     @PostMapping("/add")
     public ResponseEntity<HttpStatus> save(@RequestBody @Valid MeasurementDTO measurementDTO, BindingResult bindingResult){
         Measurement measurement = convertToMeasurement(measurementDTO);
         measurementValidator.validate(measurement, bindingResult);
+        if(measurement.getSensor() == null && measurement.getSensor().getName().isEmpty()){
+            bindingResult.addError(new FieldError("measurementDTO", "name", "Имя сенсора не может быть пустым."));
+        }
         if(bindingResult.hasErrors()){
             StringBuilder errors = new StringBuilder();
             List<FieldError> errorsList = bindingResult.getFieldErrors();
+            System.out.println(errorsList.get(0).getObjectName());
             for(FieldError error : errorsList)
                 errors.append(error.getField()).append(" - ").append(error.getDefaultMessage()).append(";");
             throw new MeasurementIsNotCreatedException(errors.toString());
